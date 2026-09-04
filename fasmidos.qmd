@@ -16,11 +16,36 @@ execute:
   message: false
 ---
 
+## Resumen de Hallazgos
+
+Este análisis demuestra que la viabilidad del *Dyme ramulus* no es un evento aleatorio, sino un filtro biomecánico cuantificable:
+
+1. **El diámetro transversal es el guardián de la eclosión:** Los huevos exitosos exigen una altura y un ancho significativamente mayores ($p < 0.001$). La longitud axial carece de impacto estadístico, desmintiendo que un huevo más grande en todos sus ejes tenga ventaja.
+2. **Existe un "corredor alométrico" estricto:** Los embriones viables están limitados a una proporción geométrica muy específica entre su ancho y altura ($R^2 = 0.324$). Desviarse de esta envolvente física lineal resulta en letalidad.
+3. **El punto de quiebre ontogenético es el Instar IV:** Una vez superada la eclosión, el desarrollo ninfal muestra una estabilidad promedio, pero el *Instar IV* exhibe un ensanchamiento crítico en la varianza temporal. Esto marca el momento de mayor vulnerabilidad y dispersión de la población ante el entorno biológico.
+
+---
+
+## Antes de Iniciar: Cuantificando la Intuición Biológica
+
+Cuando observamos el ciclo de vida de un fásmido (insecto palo) como *Dyme ramulus*, la biología nos dice que el desarrollo embrionario y ninfal enfrenta barreras físicas implacables. Nuestra hipótesis intuitiva es que la forma misma del huevo es el primer gran filtro: su geometría dicta quién sobrevive y quién no. 
+
+Aquí, traducimos esa intuición biológica a modelos matemáticos reproducibles. Evaluaremos las dimensiones físicas (ancho, altura, longitud) para descubrir cuál actúa como el verdadero "cuello de botella" biomecánico. A lo largo de este análisis, estructuraremos el pensamiento en tres pilares:
+
+* **Qué hemos hecho:** Limpieza y modelamiento espacial de datos morfológicos crudos.
+* **Qué suponemos:** Que existen restricciones geométricas absolutas (alometría) para que el embrión logre romper el opérculo con éxito.
+* **Cómo nos guía la estadística:** A través de pruebas robustas (no paramétricas) y modelos de regresión, la estadística nos permitirá separar el simple ruido visual de la verdadera señal de viabilidad biológica.
+
+---
+
 ## 1. Distribución Morfológica y Superposición
 
-La muestra analizada presenta un marcado desbalance de clases originado por la tasa de mortalidad natural propia de la especie. La visualización cruda de los ejes físicos (altura, longitud y ancho) genera sobretrazado (*overplotting*), donde la densidad de la clase no viable enmascara a los individuos que lograron eclosionar. 
+**Qué estamos viendo:**
+La vida en sus primeras etapas es sumamente frágil y selectiva, y nuestros datos son un reflejo directo de esa crudeza. Nos enfrentamos a un desbalance de clases profundo: la inmensa mayoría de los huevos simplemente no logra eclosionar. 
 
-Para revelar la estructura espacial de los individuos viables, se aplica una perturbación paramétrica controlada (*jitter*) sobre la dispersión bivariada.
+Si graficamos de forma directa todas las dimensiones físicas (altura $h$, longitud $l$, ancho $w$) en un plano cartesiano, ocurre un fenómeno visual predecible: los datos de los individuos muertos tapan por completo a los pocos que sí lograron sobrevivir. A este problema técnico se le llama sobretrazado o *overplotting*.
+
+Para resolverlo y descubrir la verdadera estructura espacial oculta en los datos, aplicamos *jitter*. Esta técnica introduce una perturbación matemática aleatoria minúscula exclusivamente sobre la clase minoritaria. El resultado separa los puntos visualmente sin alterar la matemática subyacente, revelando dónde se agrupan exactamente los "éxitos" (en azul y rojo) frente al masivo ruido de los fracasos (en gris).
 
 ```{r}
 #| label: fig-dispersion
@@ -60,17 +85,30 @@ p3 <- crear_cruce(df, "longitud", "ancho", "Longitud (l) [mm]", "Ancho (w) [mm]"
         legend.background = element_rect(fill = alpha("white", 0.7), color = "grey80"))
 
 (p1 | p2 | p3)
+
 ```
 
 ---
 
 ## 2. Determinantes Transversales de Viabilidad
 
-La distribución de las variables biométricas exhibe asimetría y heterocedasticidad, violando los supuestos paramétricos tradicionales en la clase mayoritaria. Se aplicó la prueba de suma de rangos de Wilcoxon (Mann-Whitney $U$) para cuantificar la influencia de cada dimensión sobre el éxito de eclosión.
+**Qué hemos propuesto y la evidencia estadística:**
+Visualmente ya intuimos que no todas las dimensiones importan por igual, pero en ciencia de datos la intuición no basta; debemos demostrarlo. Aquí, la distribución de las variables no sigue una campana de Gauss perfecta, violando el supuesto de normalidad. Por tanto, la estadística nos exige abandonar pruebas tradicionales como la $t$ de Student y emplear un enfoque matemático robusto: la prueba de suma de rangos de Wilcoxon (Mann-Whitney $U$).
 
-Los contrastes confirman que la viabilidad del embrión está gobernada por la sección transversal del huevo:
-* El **ancho ($w$)** y la **altura ($h$)** presentan discrepancias altamente significativas ($p < 0.001$) entre individuos viables y no viables.
-* El **eje longitudinal ($l$)** no exhibe significancia estadística, evidenciando que una mayor longitud axial no otorga ventajas biomecánicas para la culminación embrionaria.
+¿Por qué Wilcoxon? A diferencia de las pruebas paramétricas que usan promedios crudos (fácilmente distorsionables por valores atípicos), Wilcoxon ordena todos los datos de menor a mayor y evalúa sus "rangos" o posiciones relativas. Su estadístico determina si los valores de una clase son estocásticamente mayores que los de la otra, mediante la ecuación:
+
+$$U = R_1 - \frac{n_1(n_1+1)}{2}$$
+
+Donde $R_1$ representa la suma de los rangos de la primera clase y $n_1$ su tamaño muestral. Esta estructura matemática le otorga inmunidad frente a datos extremos y distribuciones asimétricas.
+
+Los gráficos de violín muestran la densidad de nuestros datos, y la evidencia estadística es contundente:
+
+* **El ancho ($w$) y la altura ($h$)** son los verdaderos parámetros que determinan la viabilidad ($p < 0.001$). Vemos claramente que los huevos que logran eclosionar exigen un diámetro transversal mayor.
+
+
+* **La longitud ($l$)** es estadísticamente irrelevante. En esta dimensión, el valor $p$ supera el umbral crítico de $0.05$. Esto significa que cualquier diferencia observada en la longitud puede atribuirse al simple azar. Un huevo más largo no garantiza éxito, lo que demuestra que el desafío vital del embrión no es longitudinal, sino su capacidad de generar presión sobre su sección transversal para lograr romper el opérculo.
+
+
 
 ```{r}
 #| label: fig-violines
@@ -102,13 +140,24 @@ ggplot(df_long, aes(x = exito_eclosion, y = medida, fill = exito_eclosion, color
         strip.text = element_text(face = "bold", size = 11), 
         axis.text.x = element_text(face = "bold")) +
   labs(x = "Destino del Individuo", y = "Dimensión Física [mm]")
+
 ```
 
 ---
 
 ## 3. Restricción Alométrica Espacial
 
-Dado el rol determinante de ambos ejes transversales, se ajustaron modelos lineales para evaluar la proporcionalidad alométrica ($h \sim w$). El coeficiente de determinación ($R^2$) estratificado según el estado ontogenético delimita la envolvente física requerida para el desarrollo interno y la apertura mecánica del opérculo.
+**Modelamiento del espacio y análisis del $R^2$:**
+Sabiendo de forma concluyente que la sección transversal gobierna la viabilidad, proponemos un modelo de regresión lineal simple para evaluar cómo crecen estas dos variables de forma conjunta (alometría):
+
+$$h = \beta_0 + \beta_1 w + \epsilon$$
+
+Donde $h$ es la altura, $w$ el ancho, $\beta_1$ la tasa de cambio proporcional, y $\epsilon$ el error no observable.
+
+El coeficiente de determinación ($R^2$) nos revela qué porcentaje de la variabilidad de la altura es explicada exclusivamente por el ancho. Es aquí donde la separación de los datos nos cuenta la historia real: si observamos la muestra estratificada en el gráfico (B), notamos que para los individuos que fallan (línea gris), el $R^2$ es ínfimo ($0.026$); sus dimensiones varían casi sin relación alguna. Sin embargo, para los huevos viables (azul y rojo), el $R^2$ estructural se dispara a $0.324$, revelando un patrón persistente y no aleatorio.
+
+**¿Qué significa esto en la realidad?**
+Nos indica que los embriones exitosos están biológicamente atrapados en una "envolvente física" muy estricta. Sus dimensiones no pueden variar libremente; se ven obligados a mantener una proporción geométrica muy específica para asegurar el espacio biomecánico necesario. Si el crecimiento transversal se desvía de este corredor alométrico lineal, el huevo se vuelve físicamente inviable.
 
 ```{r}
 #| label: fig-alometria
@@ -148,13 +197,19 @@ p_grupos <- ggplot(df, aes(x = ancho, y = altura, color = estado, shape = estado
   labs(title = "B. Estratificada", x = "Ancho (w) [mm]", y = "Altura (h) [mm]")
 
 (p_global | p_grupos)
+
 ```
 
 ---
 
 ## 4. Varianza Ontogenética Post-Eclosión
 
-Una vez superado el umbral restrictivo de la eclosión, el desarrollo ninfal muestra relativa estabilidad temporal promedio entre estadios. Las fluctuaciones en la varianza reflejan la sensibilidad diferencial de cada estadio (Instar I a VI) ante condiciones microclimáticas, desacoplándose progresivamente de la morfología del huevo inicial.
+**Lectura de la dinámica temporal:**
+Una vez que el fásmido logra la hazaña de romper el opérculo y nace, el juego cambia por completo. La biometría restrictiva que gobernaba al huevo pierde protagonismo, cediendo ante las nuevas condiciones de su entorno.
+
+En el gráfico final evaluamos la ontogenia, es decir, el desarrollo ninfal segmentado por estadios o *Instars*. La línea verde representa el comportamiento promedio (la media) de la duración en días de cada fase. Sin embargo, la verdadera historia biológica se esconde en la varianza: la sombra color salmón representa la desviación estándar de la población.
+
+Al observar la gráfica, notamos un ensanchamiento crítico de esta varianza exactamente en el *Instar IV*. Esto sugiere que, a nivel estadístico, la población sufre una dispersión masiva en sus tiempos de desarrollo al alcanzar esta etapa. Nos indica una altísima sensibilidad frente a estresores exógenos biológicos, como cambios de temperatura o disponibilidad de alimento, justo antes de volver a estabilizar su ciclo para alcanzar finalmente la adultez.
 
 ```{r}
 #| label: fig-duracion
@@ -189,4 +244,5 @@ ggplot(df_plot, aes(x = x_num, y = media_dias)) +
         axis.text.y = element_text(color = "black"), 
         panel.grid.major.y = element_line(color = "grey90", linetype = "dotted")) +
   labs(x = "Estadio Ninfal", y = "Duración (días)")
+
 ```

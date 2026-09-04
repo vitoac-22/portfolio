@@ -1,0 +1,192 @@
+---
+title: "Determinantes Morfológicos y Ontogenia en Dyme ramulus"
+author: "Víctor Bustos"
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-location: left
+    code-fold: true
+    code-summary: "Mostrar código"
+    fig-align: center
+    fig-width: 10
+    fig-height: 6
+execute:
+  warning: false
+  message: false
+---
+
+## 1. Distribución Morfológica y Superposición
+
+La muestra analizada presenta un marcado desbalance de clases originado por la tasa de mortalidad natural propia de la especie. La visualización cruda de los ejes físicos (altura, longitud y ancho) genera sobretrazado (*overplotting*), donde la densidad de la clase no viable enmascara a los individuos que lograron eclosionar. 
+
+Para revelar la estructura espacial de los individuos viables, se aplica una perturbación paramétrica controlada (*jitter*) sobre la dispersión bivariada.
+
+```{r}
+#| label: fig-dispersion
+#| fig-cap: "Cruces bivariados de los ejes morfológicos. La dispersión revela la concentración de individuos viables."
+
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+df <- readRDS("data/processed/fasmidos_clean.rds")
+
+col_pap <- c("No eclosionó" = "#BDBDBD", "Eclosionó" = "#1565C0", "Adulto" = "#C62828")
+shp_pap <- c("No eclosionó" = 1, "Eclosionó" = 16, "Adulto" = 17)
+
+crear_cruce <- function(datos, x_var, y_var, x_lab, y_lab, mostrar_leyenda = FALSE) {
+  p <- ggplot(datos, aes(x = .data[[x_var]], y = .data[[y_var]], color = estado, shape = estado)) + 
+    geom_point(data = filter(datos, estado == "No eclosionó"), alpha = 0.6, size = 1.8) +
+    geom_point(data = filter(datos, estado != "No eclosionó"), 
+               alpha = 0.85, size = 2.6, 
+               position = position_jitter(width = 0.015, height = 0.015, seed = 42)) +
+    scale_color_manual(name = "Estado", values = col_pap) +
+    scale_shape_manual(name = "Estado", values = shp_pap) +
+    theme_bw(base_size = 11) +
+    theme(panel.grid.minor = element_blank(), 
+          axis.title = element_text(face = "bold"),
+          panel.border = element_rect(linewidth = 1)) +
+    labs(x = x_lab, y = y_lab)
+  
+  if (!mostrar_leyenda) p <- p + theme(legend.position = "none")
+  return(p)
+}
+
+p1 <- crear_cruce(df, "longitud", "altura", "Longitud (l) [mm]", "Altura (h) [mm]", FALSE)
+p2 <- crear_cruce(df, "ancho", "altura", "Ancho (w) [mm]", "Altura (h) [mm]", FALSE)
+p3 <- crear_cruce(df, "longitud", "ancho", "Longitud (l) [mm]", "Ancho (w) [mm]", TRUE) +
+  theme(legend.position = c(0.78, 0.18), 
+        legend.background = element_rect(fill = alpha("white", 0.7), color = "grey80"))
+
+(p1 | p2 | p3)
+```
+
+---
+
+## 2. Determinantes Transversales de Viabilidad
+
+La distribución de las variables biométricas exhibe asimetría y heterocedasticidad, violando los supuestos paramétricos tradicionales en la clase mayoritaria. Se aplicó la prueba de suma de rangos de Wilcoxon (Mann-Whitney $U$) para cuantificar la influencia de cada dimensión sobre el éxito de eclosión.
+
+Los contrastes confirman que la viabilidad del embrión está gobernada por la sección transversal del huevo:
+* El **ancho ($w$)** y la **altura ($h$)** presentan discrepancias altamente significativas ($p < 0.001$) entre individuos viables y no viables.
+* El **eje longitudinal ($l$)** no exhibe significancia estadística, evidenciando que una mayor longitud axial no otorga ventajas biomecánicas para la culminación embrionaria.
+
+```{r}
+#| label: fig-violines
+#| fig-cap: "Distribuciones univariadas. La divergencia en las medianas confirma la dependencia transversal para la eclosión."
+
+library(tidyr)
+
+df_binario <- df |>
+  mutate(exito_eclosion = factor(ifelse(estado == "No eclosionó", "No eclosionó", "Eclosionó"), 
+                                 levels = c("No eclosionó", "Eclosionó")))
+
+df_long <- df_binario |>
+  select(exito_eclosion, ancho, altura, longitud) |>
+  pivot_longer(cols = c(ancho, altura, longitud), names_to = "dimension", values_to = "medida") |>
+  mutate(dimension = factor(dimension, levels = c("ancho", "altura", "longitud"),
+                            labels = c("Ancho (w) ***", "Altura (h) ***", "Longitud (l) - NS")))
+
+ggplot(df_long, aes(x = exito_eclosion, y = medida, fill = exito_eclosion, color = exito_eclosion)) +
+  geom_violin(trim = FALSE, alpha = 0.4, color = "grey30", linewidth = 0.5) +
+  geom_jitter(aes(shape = exito_eclosion), width = 0.15, alpha = 0.8, size = 1.8) +
+  geom_boxplot(width = 0.12, fill = "white", color = "black", outlier.shape = NA, linewidth = 0.6, alpha = 0.7) +
+  facet_wrap(~dimension, scales = "free_y") +
+  scale_fill_manual(values = col_pap) + 
+  scale_color_manual(values = col_pap) + 
+  scale_shape_manual(values = shp_pap) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "none", 
+        strip.background = element_rect(fill = "grey95", color = "black", linewidth = 1),
+        strip.text = element_text(face = "bold", size = 11), 
+        axis.text.x = element_text(face = "bold")) +
+  labs(x = "Destino del Individuo", y = "Dimensión Física [mm]")
+```
+
+---
+
+## 3. Restricción Alométrica Espacial
+
+Dado el rol determinante de ambos ejes transversales, se ajustaron modelos lineales para evaluar la proporcionalidad alométrica ($h \sim w$). El coeficiente de determinación ($R^2$) estratificado según el estado ontogenético delimita la envolvente física requerida para el desarrollo interno y la apertura mecánica del opérculo.
+
+```{r}
+#| label: fig-alometria
+#| fig-cap: "Regresión alométrica (ancho vs. altura). Las franjas de error estándar delimitan la restricción espacial de los embriones viables."
+
+mod_global <- lm(altura ~ ancho, data = df)
+label_global <- sprintf("italic(R)^2 == %.3f", summary(mod_global)$r.squared)
+
+df_r2 <- df |>
+  group_by(estado) |>
+  summarise(r2_val = summary(lm(altura ~ ancho))$r.squared, .groups = 'drop') |>
+  mutate(label = sprintf("italic(R)^2 == %.3f", r2_val),
+         x_pos = min(df$ancho, na.rm = TRUE),
+         y_pos = max(df$altura, na.rm = TRUE) - (row_number() - 1) * 0.06)
+
+p_global <- ggplot(df, aes(x = ancho, y = altura)) +
+  geom_point(aes(color = estado, shape = estado), alpha = 0.7, size = 2.2) +
+  geom_smooth(method = "lm", color = "black", linewidth = 1.2, se = TRUE, fill = "grey80") +
+  annotate("text", x = min(df$ancho, na.rm = TRUE), y = max(df$altura, na.rm = TRUE), 
+           label = label_global, parse = TRUE, hjust = 0, size = 4.5, fontface = "bold") +
+  scale_color_manual(name = "Estado", values = col_pap) + 
+  scale_shape_manual(name = "Estado", values = shp_pap) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "none", axis.title = element_text(face = "bold")) +
+  labs(title = "A. Global", x = "Ancho (w) [mm]", y = "Altura (h) [mm]")
+
+p_grupos <- ggplot(df, aes(x = ancho, y = altura, color = estado, shape = estado)) +
+  geom_point(alpha = 0.7, size = 2.2) +
+  geom_smooth(aes(fill = estado), method = "lm", alpha = 0.15, linewidth = 1.2, se = TRUE) +
+  geom_text(data = df_r2, aes(x = x_pos, y = y_pos, label = label, color = estado), 
+            parse = TRUE, hjust = 0, size = 4, show.legend = FALSE, fontface = "bold", inherit.aes = FALSE) +
+  scale_color_manual(name = "Estado", values = col_pap) + 
+  scale_fill_manual(name = "Estado", values = col_pap) + 
+  scale_shape_manual(name = "Estado", values = shp_pap) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "bottom", axis.title = element_text(face = "bold")) +
+  labs(title = "B. Estratificada", x = "Ancho (w) [mm]", y = "Altura (h) [mm]")
+
+(p_global | p_grupos)
+```
+
+---
+
+## 4. Varianza Ontogenética Post-Eclosión
+
+Una vez superado el umbral restrictivo de la eclosión, el desarrollo ninfal muestra relativa estabilidad temporal promedio entre estadios. Las fluctuaciones en la varianza reflejan la sensibilidad diferencial de cada estadio (Instar I a VI) ante condiciones microclimáticas, desacoplándose progresivamente de la morfología del huevo inicial.
+
+```{r}
+#| label: fig-duracion
+#| fig-cap: "Trayectoria temporal del desarrollo ninfal. Las barras verticales indican el rango absoluto de duración en días, superpuestas a la tendencia central."
+
+df_ninfas <- data.frame(
+  estadio = factor(
+    c("Instar I", "Instar II", "Instar III", "Instar IV", "Instar V", "Instar VI"),
+    levels = c("Instar I", "Instar II", "Instar III", "Instar IV", "Instar V", "Instar VI")
+  ),
+  media_dias = c(24.7, 21.41, 23.1, 21.2, 22.2, 23.2),
+  sd = c(1.3, 1.8, 2.5, 6.4, 2.6, 1.4),
+  rango_min = c(21, 15, 13, 14, 16, 19),
+  rango_max = c(29, 31, 33, 32, 28, 28)
+)
+
+df_plot <- df_ninfas |>
+  mutate(ymin_sd = media_dias - sd, 
+         ymax_sd = media_dias + sd, 
+         x_num = as.numeric(estadio))
+
+ggplot(df_plot, aes(x = x_num, y = media_dias)) +
+  geom_linerange(aes(ymin = rango_min, ymax = rango_max), color = "grey70", linewidth = 1.5, alpha = 0.6) +
+  geom_ribbon(aes(ymin = ymin_sd, ymax = ymax_sd), fill = "#F2E2D2", alpha = 0.8) +
+  geom_line(color = "#008B6B", linewidth = 1.2) +
+  geom_point(color = "#008B6B", size = 3.5) +
+  geom_text(aes(label = round(media_dias, 1)), vjust = -2, color = "#008B6B", fontface = "bold", size = 4) +
+  scale_x_continuous(breaks = 1:6, labels = df_plot$estadio) +
+  theme_classic(base_size = 12) +
+  theme(axis.title = element_text(face = "bold"), 
+        axis.text.x = element_text(color = "black", margin = margin(t = 5)),
+        axis.text.y = element_text(color = "black"), 
+        panel.grid.major.y = element_line(color = "grey90", linetype = "dotted")) +
+  labs(x = "Estadio Ninfal", y = "Duración (días)")
+```

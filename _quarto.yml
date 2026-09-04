@@ -8,10 +8,10 @@ website:
     left:
       - text: "Inicio"
         href: index.qmd
-      - text: "Proyectos"
-        menu:
-          - text: "Monitoreo de Fásmidos"
-            href: fasmidos.qmd
+      # - text: "Papers"
+      #   menu:
+      #     - text: "Monitoreo de Fásmidos"
+      #       href: fasmidos.qmd
 
 format:
   html:

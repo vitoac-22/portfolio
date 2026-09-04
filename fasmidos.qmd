@@ -1,6 +1,7 @@
 ---
 title: "Determinantes Morfológicos y Ontogenia en Dyme ramulus"
 author: "Víctor Bustos"
+draft: true
 format:
   html:
     theme: flatly

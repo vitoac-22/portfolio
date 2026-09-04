@@ -1,0 +1,50 @@
+/* Centrar la imagen de perfil en plantillas trestles */
+.about-entity .about-image {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+/* Barra de navegación superior */
+.navbar {
+  background-color: #EDCD00 !important;
+  border-bottom: 1px solid #d4b800;
+}
+
+/* Enlaces y título en la barra superior */
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .dropdown-toggle {
+  color: #1a1a1a !important;
+  font-weight: 500;
+}
+
+/* Estado activo o hover en la barra */
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+/* Icono de búsqueda */
+.navbar .aa-Autocomplete-button,
+.navbar .navbar-search-icon {
+  color: #1a1a1a !important;
+}
+
+/* 1. Encuadre exacto de la foto (evita distorsión o corte de cabeza) */
+.about-entity img {
+  object-fit: cover;
+  object-position: center top !important; /* Prioriza el encuadre en la parte superior/rostro */
+  border-radius: 8px; /* Esquinas sutiles, no circulares */
+}
+
+/* 2. Mayor holgura y separación entre la columna izquierda y el texto */
+.quarto-about-trestles .about-entity {
+  padding-right: 2.5rem;
+  border-right: 1px solid #e5e7eb; /* Línea divisoria limpia y sutil */
+}
+
+.quarto-about-trestles .about-contents {
+  padding-left: 2.5rem;
+}

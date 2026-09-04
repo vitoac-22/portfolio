@@ -1,0 +1,35 @@
+---
+title: "Víctor Bustos"
+subtitle: "Ciencia de Datos, Modelamiento Estadístico & Automatización"
+image: profile.jpg
+toc: false
+page-layout: full
+about:
+  template: trestles
+  image-shape: rectangle
+  image-width: 17em
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/victorbustos-stats
+    - icon: github
+      text: GitHub
+      href: https://github.com/vitoac-22
+---
+
+### Perfil y Enfoque
+
+Profesional en **Ciencia de Datos e Inteligencia Artificial**, con base analítica en matemática pura y estadística aplicada.
+
+Mi enfoque se centra en la **cuantificación de la intuición**: traducir hipótesis complejas en modelos reproducibles y decisiones bajo incertidumbre.
+
+* **Modelamiento Probabilístico y Estadístico:** Formulación matemática rigurosa orientada a la inferencia, análisis causal y toma de decisiones.
+* **Ingeniería de Datos y Automatización:** Construcción de flujos de datos reproducibles, integración de bases de datos relacionales y optimización de procesos.
+* **Investigación Cuantitativa Aplicada:** Modelamiento de dinámicas ecológicas y caracterización de patrones biológicos complejos.
+
+---
+
+### Proyectos Principales
+
+* **Estudio y Monitoreo de Fásmidos:** Modelamiento y estructuración de datos de ocurrencia y caracterización ecológica.
+* **Modelos Estadísticos Avanzados:** Implementación y validación de pipelines analíticos en R y Python.

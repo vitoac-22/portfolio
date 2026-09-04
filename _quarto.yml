@@ -1,0 +1,20 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Víctor Bustos"
+  navbar:
+    left:
+      - text: "Inicio"
+        href: index.qmd
+      - text: "Proyectos"
+        menu:
+          - text: "Monitoreo de Fásmidos"
+            href: fasmidos.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true

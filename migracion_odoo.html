@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="description" content="Ingeniería de datos estructurada para la transferencia segura de +17,000 documentos legales mediante XML-RPC, con mitigación de riesgos.">
 
-<title>Víctor Bustos – Víctor Bustos | Data &amp; Automation Engineer</title>
+<title>Migración Masiva y Orquestación de Datos: Odoo V13 a V19 – Víctor Bustos | Data &amp; Automation Engineer</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -26,6 +27,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -40,6 +76,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
@@ -72,6 +109,9 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script src="site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
 <link rel="stylesheet" href="styles.css">
@@ -95,7 +135,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Perfil</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -145,60 +185,178 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#el-problema-operativo" id="toc-el-problema-operativo" class="nav-link active" data-scroll-target="#el-problema-operativo">1. El Problema Operativo</a></li>
+  <li><a href="#arquitectura-de-la-solución" id="toc-arquitectura-de-la-solución" class="nav-link" data-scroll-target="#arquitectura-de-la-solución">2. Arquitectura de la Solución</a></li>
+  <li><a href="#despliegue-técnico" id="toc-despliegue-técnico" class="nav-link" data-scroll-target="#despliegue-técnico">3. Despliegue Técnico</a>
+  <ul class="collapse">
+  <li><a href="#motor-de-extracción-inversa-v13---local" id="toc-motor-de-extracción-inversa-v13---local" class="nav-link" data-scroll-target="#motor-de-extracción-inversa-v13---local">Motor de Extracción Inversa (V13 -&gt; Local)</a></li>
+  <li><a href="#motor-de-carga-control-de-riesgos-e-idempotencia-local---v19" id="toc-motor-de-carga-control-de-riesgos-e-idempotencia-local---v19" class="nav-link" data-scroll-target="#motor-de-carga-control-de-riesgos-e-idempotencia-local---v19">Motor de Carga, Control de Riesgos e Idempotencia (Local -&gt; V19)</a></li>
+  </ul></li>
+  <li><a href="#impacto-operativo" id="toc-impacto-operativo" class="nav-link" data-scroll-target="#impacto-operativo">4. Impacto Operativo</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<div class="quarto-about-trestles column-page">
-  <div class="about-entity">
-    <img src="profile.jpg" class="about-image
-  rectangle " style="width: 17em;">
+<main class="content" id="quarto-document-content">
+
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Víctor Bustos</h1>
-<p class="subtitle lead">Ciencia de Datos, Modelamiento Estadístico &amp; Automatización</p>
+<h1 class="title">Migración Masiva y Orquestación de Datos: Odoo V13 a V19</h1>
 </div>
-<div class="quarto-title-meta column-page">
+
+<div>
+  <div class="description">
+    Ingeniería de datos estructurada para la transferencia segura de +17,000 documentos legales mediante XML-RPC, con mitigación de riesgos.
   </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
 </header>
-    <div class="about-links">
-  <a href="https://www.linkedin.com/in/victorbustos-stats" class="about-link" rel="" target="">
-    <i class="bi bi-linkedin"></i>
-     <span class="about-link-text">LinkedIn</span>
-  </a>
-  <a href="https://github.com/vitoac-22" class="about-link" rel="" target="">
-    <i class="bi bi-github"></i>
-     <span class="about-link-text">GitHub</span>
-  </a>
-</div>
-  </div>
-  <div class="about-contents"><main class="content column-page" id="quarto-document-content">
-<section id="perfil-y-enfoque" class="level3">
-<h3 data-anchor-id="perfil-y-enfoque">Perfil y Enfoque</h3>
-<p>Profesional en <strong>Ciencia de Datos e Inteligencia Artificial</strong>, con base analítica en matemática pura y estadística aplicada.</p>
-<p>Mi enfoque se centra en la <strong>cuantificación de la intuición</strong>: traducir hipótesis complejas en modelos reproducibles y decisiones bajo incertidumbre.</p>
+
+
+<section id="el-problema-operativo" class="level2">
+<h2 class="anchored" data-anchor-id="el-problema-operativo">1. El Problema Operativo</h2>
+<p>Una actualización crítica del sistema ERP (de Odoo V13 a Odoo V19) presentaba un cuello de botella logístico severo: la migración de la base documental de los clientes.</p>
 <ul>
-<li><strong>Modelamiento Probabilístico y Estadístico:</strong> Formulación matemática rigurosa orientada a la inferencia, análisis causal y toma de decisiones.</li>
-<li><strong>Ingeniería de Datos y Automatización:</strong> Construcción de flujos de datos reproducibles, integración de bases de datos relacionales y optimización de procesos.</li>
-<li><strong>Investigación Cuantitativa Aplicada:</strong> Modelamiento de dinámicas ecológicas y caracterización de patrones biológicos complejos.</li>
+<li><strong>Volumen:</strong> Más de 17,000 archivos binarios distribuidos entre ~4,400 perfiles de clientes.</li>
+<li><strong>Limitación del Sistema:</strong> Odoo carece de herramientas nativas para la exportación/importación masiva de archivos binarios manteniendo la relación estricta con la identificación del cliente (<code>partner_id</code>).</li>
+<li><strong>Inestabilidad de Red:</strong> La extracción tradicional colapsaba el servidor. Solicitar múltiples archivos pesados en formato Base64 mediante el protocolo XML-RPC generaba desconexiones silenciosas (<em>timeouts</em>), lo que resultaba en descargas incompletas y pérdida de información.</li>
+</ul>
+</section>
+<section id="arquitectura-de-la-solución" class="level2">
+<h2 class="anchored" data-anchor-id="arquitectura-de-la-solución">2. Arquitectura de la Solución</h2>
+<p>El entorno académico asume que los datos siempre están limpios y disponibles. La realidad operativa exige diseñar asumiendo que la red va a fallar. La arquitectura se dividió en dos motores independientes (Extracción y Carga), unidos por un sistema de validación local y un registro de errores para evitar detener el proceso masivo.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A[(Odoo V13 Producción)] --&gt;|XML-RPC API| B(Motor de Extracción Inversa)
+    B --&gt;|Manejo de Errores| C{¿Fallo de Red?}
+    C --&gt;|Sí| D[Registro_Errores.csv]
+    C --&gt;|No| E[Almacenamiento Local Estructurado]
+    
+    E --&gt; F(Motor de Carga Inteligente)
+    F --&gt;|Barrera Física| G{¿Archivo 0 bytes?}
+    G --&gt;|Sí| H[Auditoría: Rechazado]
+    G --&gt;|No| I{¿Existe en V19?}
+    
+    I --&gt;|Sí| J[Actualizar 'write']
+    I --&gt;|No| K[Inyectar 'create']
+    
+    J --&gt; L[(Odoo V19 Producción)]
+    K --&gt; L
+
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+<section id="despliegue-técnico" class="level2">
+<h2 class="anchored" data-anchor-id="despliegue-técnico">3. Despliegue Técnico</h2>
+<section id="motor-de-extracción-inversa-v13---local" class="level3">
+<h3 class="anchored" data-anchor-id="motor-de-extracción-inversa-v13---local">Motor de Extracción Inversa (V13 -&gt; Local)</h3>
+<p>El primer error estratégico común es buscar clientes para luego ver si tienen documentos. Aquí se invirtió el flujo: atacamos directamente la tabla <code>documents.document</code> como única fuente de verdad.</p>
+<p>Para evitar el ahogamiento de la red, se implementó una extracción atómica (archivo por archivo). Si la conexión cae, el archivo no se pierde; el error se captura en un registro (<code>dead_letters</code>) para permitir un reintento aislado sin detener los 16,999 documentos restantes.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fragmento Clave: Manejo de red y registro de contingencia</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Petición pesada de Base64 aislada para evitar saturar el servidor</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    full_doc <span class="op">=</span> models.execute_kw(</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        db, uid, pwd, <span class="st">'documents.document'</span>, <span class="st">'read'</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        [[doc_id]], {<span class="st">'fields'</span>: [<span class="st">'datas'</span>]}</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ... lógica de limpieza de nombres de archivo y guardado físico en disco ...</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    error_msg <span class="op">=</span> <span class="bu">str</span>(e).replace(<span class="st">'</span><span class="ch">\n</span><span class="st">'</span>, <span class="st">' '</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Persistencia del fallo para auditar y reintentar posteriormente</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(<span class="st">"dead_letters_extraccion.csv"</span>, <span class="st">"a"</span>, encoding<span class="op">=</span><span class="st">"utf-8"</span>) <span class="im">as</span> f_err:</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        f_err.write(<span class="ss">f"</span><span class="sc">{</span>doc_id<span class="sc">}</span><span class="ss">,</span><span class="sc">{</span>vat_str<span class="sc">}</span><span class="ss">,Error_Extraccion,</span><span class="sc">{</span>error_msg<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">continue</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="motor-de-carga-control-de-riesgos-e-idempotencia-local---v19" class="level3">
+<h3 class="anchored" data-anchor-id="motor-de-carga-control-de-riesgos-e-idempotencia-local---v19">Motor de Carga, Control de Riesgos e Idempotencia (Local -&gt; V19)</h3>
+<p>Inyectar datos directamente a producción es un riesgo inaceptable. Se diseñó el motor de carga con tres capas de seguridad:</p>
+<ol type="1">
+<li><strong>Modos de Ejecución Estrictos:</strong> El script cuenta con variables de control (<code>MUESTRA</code>, <code>SIMULACIÓN</code>, <code>TOTAL</code>). Esto permitió auditar el comportamiento del código en lotes pequeños y simular la inyección de datos sin alterar la base de datos real antes del despliegue final.</li>
+<li><strong>Barrera Física:</strong> Rechazo automático de archivos corruptos (0 bytes) generados por micro-cortes durante la descarga.</li>
+<li><strong>Idempotencia:</strong> Búsqueda previa en el entorno de destino. Si el archivo existe, se actualiza (<code>write</code>); si no, se crea (<code>create</code>), eliminando el riesgo de registros duplicados.</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fragmento Clave: Modos de ejecución, validación física y actualización</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> MODO_EJECUCION <span class="op">==</span> <span class="st">'SIMULACION'</span>:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"[SIMULACIÓN] El archivo </span><span class="sc">{</span>file_name<span class="sc">}</span><span class="ss"> está listo para inyección."</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">continue</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> os.path.getsize(file_path) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"[!] RECHAZADO: '</span><span class="sc">{</span>file_name<span class="sc">}</span><span class="ss">' está vacío (0 bytes)."</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">continue</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Búsqueda de duplicados en el entorno de destino</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>duplicados <span class="op">=</span> OdooDocument.search([</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'name'</span>, <span class="st">'='</span>, file_name),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'partner_id'</span>, <span class="st">'='</span>, partner_id)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(file_path, <span class="st">"rb"</span>) <span class="im">as</span> f:</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        encoded_file <span class="op">=</span> base64.b64encode(f.read()).decode(<span class="st">'utf-8'</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> duplicados:</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sobrescribir archivo existente para evitar duplicidad de registros</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        OdooDocument.write(duplicados[<span class="dv">0</span>], {<span class="st">'datas'</span>: encoded_file})</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Inyectar nuevo documento</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        OdooDocument.create(document_data)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e_red:</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Manejo seguro de caídas de red durante la subida</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="impacto-operativo" class="level2">
+<h2 class="anchored" data-anchor-id="impacto-operativo">4. Impacto Operativo</h2>
+<ul>
+<li><strong>Integridad Garantizada:</strong> Cero duplicidad en la base de datos de producción (V19) y bloqueo total de archivos corruptos.</li>
+<li><strong>Control de Riesgo:</strong> El uso de modos de simulación garantizó que la ejecución final (<code>TOTAL</code>) no generara caídas en el ERP productivo del cliente.</li>
+<li><strong>Eficiencia Logística:</strong> Transformación de una tarea manual inviable en un proceso automatizado, trazable mediante logs y reutilizable para futuras migraciones.</li>
 </ul>
 <hr>
-</section>
-<section id="proyectos-principales" class="level3">
-<h3 data-anchor-id="proyectos-principales">Proyectos Principales</h3>
-<ul>
-<li><strong>Estudio y Monitoreo de Fásmidos:</strong> Modelamiento y estructuración de datos de ocurrencia y caracterización ecológica.</li>
-<li><strong>Modelos Estadísticos Avanzados:</strong> Implementación y validación de pipelines analíticos en R y Python.</li>
-</ul>
+<p><em>Para consultas sobre la arquitectura de esta solución o acceso al código fuente completo, contáctame en: <strong>victor.bustos@proton.me</strong></em></p>
 
 
 </section>
-</main></div>
-</div>
- <!-- /main -->
+
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
     const isCodeAnnotation = (el) => {
       for (const clz of el.classList) {
         if (clz.startsWith('code-annotation-')) {                     

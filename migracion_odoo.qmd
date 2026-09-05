@@ -1,0 +1,120 @@
+---
+title: "Migración Masiva y Orquestación de Datos: Odoo V13 a V19"
+description: "Ingeniería de datos estructurada para la transferencia segura de +17,000 documentos legales mediante XML-RPC, con mitigación de riesgos."
+toc: true
+format:
+  html:
+    code-fold: true
+    code-summary: "Ver código fuente"
+---
+
+## 1. El Problema Operativo
+
+Una actualización crítica del sistema ERP (de Odoo V13 a Odoo V19) presentaba un cuello de botella logístico severo: la migración de la base documental de los clientes. 
+
+* **Volumen:** Más de 17,000 archivos binarios distribuidos entre ~4,400 perfiles de clientes.
+* **Limitación del Sistema:** Odoo carece de herramientas nativas para la exportación/importación masiva de archivos binarios manteniendo la relación estricta con la identificación del cliente (`partner_id`).
+* **Inestabilidad de Red:** La extracción tradicional colapsaba el servidor. Solicitar múltiples archivos pesados en formato Base64 mediante el protocolo XML-RPC generaba desconexiones silenciosas (*timeouts*), lo que resultaba en descargas incompletas y pérdida de información.
+
+## 2. Arquitectura de la Solución
+
+El entorno académico asume que los datos siempre están limpios y disponibles. La realidad operativa exige diseñar asumiendo que la red va a fallar. La arquitectura se dividió en dos motores independientes (Extracción y Carga), unidos por un sistema de validación local y un registro de errores para evitar detener el proceso masivo.
+
+```{mermaid}
+flowchart TD
+    A[(Odoo V13 Producción)] -->|XML-RPC API| B(Motor de Extracción Inversa)
+    B -->|Manejo de Errores| C{¿Fallo de Red?}
+    C -->|Sí| D[Registro_Errores.csv]
+    C -->|No| E[Almacenamiento Local Estructurado]
+    
+    E --> F(Motor de Carga Inteligente)
+    F -->|Barrera Física| G{¿Archivo 0 bytes?}
+    G -->|Sí| H[Auditoría: Rechazado]
+    G -->|No| I{¿Existe en V19?}
+    
+    I -->|Sí| J[Actualizar 'write']
+    I -->|No| K[Inyectar 'create']
+    
+    J --> L[(Odoo V19 Producción)]
+    K --> L
+
+```
+
+## 3. Despliegue Técnico
+
+### Motor de Extracción Inversa (V13 -> Local)
+
+El primer error estratégico común es buscar clientes para luego ver si tienen documentos. Aquí se invirtió el flujo: atacamos directamente la tabla `documents.document` como única fuente de verdad.
+
+Para evitar el ahogamiento de la red, se implementó una extracción atómica (archivo por archivo). Si la conexión cae, el archivo no se pierde; el error se captura en un registro (`dead_letters`) para permitir un reintento aislado sin detener los 16,999 documentos restantes.
+
+```python
+# Fragmento Clave: Manejo de red y registro de contingencia
+try:
+    # Petición pesada de Base64 aislada para evitar saturar el servidor
+    full_doc = models.execute_kw(
+        db, uid, pwd, 'documents.document', 'read',
+        [[doc_id]], {'fields': ['datas']}
+    )
+    
+    # ... lógica de limpieza de nombres de archivo y guardado físico en disco ...
+
+except Exception as e:
+    error_msg = str(e).replace('\n', ' ')
+    # Persistencia del fallo para auditar y reintentar posteriormente
+    with open("dead_letters_extraccion.csv", "a", encoding="utf-8") as f_err:
+        f_err.write(f"{doc_id},{vat_str},Error_Extraccion,{error_msg}\n")
+    continue
+
+```
+
+### Motor de Carga, Control de Riesgos e Idempotencia (Local -> V19)
+
+Inyectar datos directamente a producción es un riesgo inaceptable. Se diseñó el motor de carga con tres capas de seguridad:
+
+1. **Modos de Ejecución Estrictos:** El script cuenta con variables de control (`MUESTRA`, `SIMULACIÓN`, `TOTAL`). Esto permitió auditar el comportamiento del código en lotes pequeños y simular la inyección de datos sin alterar la base de datos real antes del despliegue final.
+2. **Barrera Física:** Rechazo automático de archivos corruptos (0 bytes) generados por micro-cortes durante la descarga.
+3. **Idempotencia:** Búsqueda previa en el entorno de destino. Si el archivo existe, se actualiza (`write`); si no, se crea (`create`), eliminando el riesgo de registros duplicados.
+
+```python
+# Fragmento Clave: Modos de ejecución, validación física y actualización
+if MODO_EJECUCION == 'SIMULACION':
+    print(f"[SIMULACIÓN] El archivo {file_name} está listo para inyección.")
+    continue
+
+if os.path.getsize(file_path) == 0:
+    print(f"[!] RECHAZADO: '{file_name}' está vacío (0 bytes).")
+    continue
+
+# Búsqueda de duplicados en el entorno de destino
+duplicados = OdooDocument.search([
+    ('name', '=', file_name),
+    ('partner_id', '=', partner_id)
+])
+
+try:
+    with open(file_path, "rb") as f:
+        encoded_file = base64.b64encode(f.read()).decode('utf-8')
+    
+    if duplicados:
+        # Sobrescribir archivo existente para evitar duplicidad de registros
+        OdooDocument.write(duplicados[0], {'datas': encoded_file})
+    else:
+        # Inyectar nuevo documento
+        OdooDocument.create(document_data)
+        
+except Exception as e_red:
+    # Manejo seguro de caídas de red durante la subida
+    pass
+
+```
+
+## 4. Impacto Operativo
+
+* **Integridad Garantizada:** Cero duplicidad en la base de datos de producción (V19) y bloqueo total de archivos corruptos.
+* **Control de Riesgo:** El uso de modos de simulación garantizó que la ejecución final (`TOTAL`) no generara caídas en el ERP productivo del cliente.
+* **Eficiencia Logística:** Transformación de una tarea manual inviable en un proceso automatizado, trazable mediante logs y reutilizable para futuras migraciones.
+
+---
+
+*Para consultas sobre la arquitectura de esta solución o acceso al código fuente completo, contáctame en: **victor.bustos@proton.me***

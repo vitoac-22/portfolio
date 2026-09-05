@@ -3,15 +3,33 @@ project:
   output-dir: _site
 
 website:
-  title: "Víctor Bustos"
+  title: "Víctor Bustos | Data & Automation Engineer"
   navbar:
     left:
-      - text: "Inicio"
+      - text: "Perfil"
         href: index.qmd
-      # - text: "Papers"
-      #   menu:
-      #     - text: "Monitoreo de Fásmidos"
-      #       href: fasmidos.qmd
+        
+      - text: "Ingeniería & Arquitectura"
+        menu:
+          - text: "Migración Masiva ERP (Odoo V13 a V19)"
+            href: migracion_odoo.qmd
+      
+      - text: "Investigación"
+        # menu:
+          # - text: "Determinantes en D. ramulus (Embargado)"
+          #   href: fasmidos.qmd
+            
+      - text: "Proyectos Aplicados"
+        menu:
+          - text: "Modelamiento Cuantitativo (GARCH)"
+            href: finanzas_garch.qmd # Archivo futuro
+            
+
+    right:
+      - icon: github
+        href: https://github.com/vitoac-22
+      - icon: linkedin
+        href: https://www.linkedin.com/in/victorbustos-stats
 
 format:
   html:
